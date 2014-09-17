@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>geocoder catastro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="http://www.instamaps.cat/llibreries/css/bootstrap.min.css">
+<link rel="stylesheet" href="css/select2.css">
+<link rel="stylesheet" href="css/select2-bootstrap.css">
+ <link rel="stylesheet" href="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.css" />
+<link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+<div class="container">
+	<div class="row">
+		<div class="col-md-12"><h4>Geocoder catastro</h4></div>
+	</div>
+	<div class="row">
+		<div class="col-md-8 col-md-offset-2 white-bkg">
+		<form role="form">
+			<div class="form-group">
+			<label>Entreu les següents dades:</label>
+			</div>
+		  <div class="form-group">
+		    <label for="municipi">Municipi</label>
+		    <select class="form-control" id="municipi" data-placeholder="Seleccioneu el municipi">
+		    	<option></option>
+		    </select>
+		    <span class="help-block">Únicament municipis de Catalunya</span>
+		  </div>
+		  <div class="form-group">
+		    <label for="adreca">Adreça Postal</label>
+		    <input type="text" class="form-control" id="adreca" placeholder="CL MAJOR, 12">
+		    <span class="help-block">
+		    	<a id="llistatTipusCarrer">llistat de tipus de carrers</a>
+					&nbsp;&nbsp;&nbsp;&nbsp;
+				<a id="llistatCarrers">llistat de carrers</a>
+			</span>
+		  </div>
+		  <button id="btnCercar" type="submit" class="btn btn-default">Cercar</button>
+		  <hr>
+		  <div class="form-group">
+		    <label for="refcad">Referència cadastral</label>
+		    <input type="text" class="form-control" id="refcad" placeholder="referència cadastral 20 dígits">
+		    <span class="help-block">La referència cadastral ha de tenir 20 dígits</span>
+		  </div>
+		  <button id="btnEnviar" type="submit" class="btn btn-default">Cercar</button>
+		</form>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-md-12"><h4>&nbsp;</h4></div>
+	</div>
+	<div class="row">
+		<div class="col-md-8 col-md-offset-2 white-bkg">
+			<div id="map"></div>
+		</div>
+	</div>
+	
+	<div class="modal fade" id="llistaTipusModal">
+	  <div class="modal-dialog">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Tancar</span></button>
+	        <h4 class="modal-title">Tipus carrers Cadastre</h4>
+	      </div>
+	      <div class="modal-body">
+	        <div id="llistatTipusCar" class="list-group"></div>
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-default" data-dismiss="modal">Tancar</button>
+	      </div>
+	    </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+	
+	<div class="modal fade" id="llistaCarrersModal">
+	  <div class="modal-dialog">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Tancar</span></button>
+	        <h4 class="modal-title">Llistat carrers Municipi</h4>
+	      </div>
+	      <div class="modal-body">
+	      	<div id="llistatCarrersMsg" class="alert-danger"></div>
+	        <div id="llistatCarrersList" class="list-group"></div>
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-default" data-dismiss="modal">Tancar</button>
+	      </div>
+	    </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+	
+	<div class="modal fade" id="llistaRCModal">
+	  <div class="modal-dialog">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Tancar</span></button>
+	        <h4 class="modal-title">Llistat de Béns Immobles</h4>
+	      </div>
+	      <div class="modal-body">
+	      	<div id="llistatRCMsg" class="alert-danger"></div>
+	        <div id="llistatRCList" class="list-group"></div>
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-default" data-dismiss="modal">Tancar</button>
+	      </div>
+	    </div><!-- /.modal-content -->
+	  </div><!-- /.modal-dialog -->
+	</div><!-- /.modal -->
+	
+	
+	<script id="llistatTipus-template" type="text/x-handlebars-template">
+	{{#each this}}
+		<a href="#" class="list-group-item" data-tv="{{tv}}">{{tv}} {{nom}}</a>
+	{{/each}}
+	</script>
+	
+	<script id="llistatMunicipis-template" type="text/x-handlebars-template">
+	{{#each this}}
+		<option value="{{codiCadastre}}">{{municipiCadastre}}</option>
+	{{/each}}
+	</script>
+	
+	<script id="llistatCarrers-template" type="text/x-handlebars-template">
+	{{#each calle}}
+		<a href="#" class="list-group-item" data-nom="{{dir.tv}} {{dir.nv}}">{{dir.tv}} {{dir.nv}}</a>
+	{{/each}}
+	</script>
+	
+	<script id="llistatRC-template" type="text/x-handlebars-template">
+	{{#each rcdnp}}
+		<a href="#" class="list-group-item" data-rc="{{rc.pc1}}{{rc.pc2}}{{rc.car}}{{rc.cc1}}{{rc.cc2}}">{{rc.pc1}}{{rc.pc2}}{{rc.car}}{{rc.cc1}}{{rc.cc2}} - <strong>Escala:</strong>{{dt.locs.lous.lourb.loint.es}} <strong>Planta:</strong>{{dt.locs.lous.lourb.loint.pt}} <strong>Porta:</strong>{{dt.locs.lous.lourb.loint.pu}}</a>
+	{{/each}}
+	</script>
+		
+</div>
+
+<script src="http://www.instamaps.cat/llibreries/js/jquery/jquery-2.0.2.min.js"></script>
+<script src="http://www.instamaps.cat/llibreries/js/bootstrap.min.js"></script>
+<script src="http://www.instamaps.cat/llibreries/js/handlebars-v1.1.2.js"></script>
+<script src="http://www.instamaps.cat/llibreries/js/jquery/plugins/url.min.js"></script>
+<script src="http://cdn.leafletjs.com/leaflet-0.7.3/leaflet.js"></script>
+
+<script src="js/tipus_via_cadastre.js" type="text/javascript"></script>
+
+<script src="js/select2.min.js" type="text/javascript"></script>
+<script src="js/select2_locale_ca.js" type="text/javascript"></script>
+<script src="js/index.js" type="text/javascript"></script>
+
+</body>
+</html>
